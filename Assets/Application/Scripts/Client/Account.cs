@@ -11,7 +11,7 @@ namespace Application.Scripts.Client
         [SerializeField] private TextMeshProUGUI currencyText;
 
         private App _app;
-        private Application.Scripts.Server.Account _account;
+        private Server.Account _account;
 
         public void Init(string accountName, string number, string balance, string currency, App app, Application.Scripts.Server.Account account)
         {

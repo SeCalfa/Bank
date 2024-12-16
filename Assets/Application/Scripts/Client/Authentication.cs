@@ -69,7 +69,7 @@ namespace Application.Scripts.Client
         public void CreateAccount(string name, string currency)
         {
             var docRef = _db.Collection("Users").Document(User.FirstName + " " + User.SecondName);
-            var account = new Application.Scripts.Server.Account
+            var account = new Server.Account
             {
                 Name = name,
                 Сurrency = currency,
@@ -116,63 +116,41 @@ namespace Application.Scripts.Client
                         {
                             if (account.Number.SequenceEqual(currentNumber))
                             {
-                                var oldAccount = new Application.Scripts.Server.Account
+                                var oldAccount = new Server.Account
                                 {
                                     Name = account.Name,
                                     Number = account.Number,
                                     Сurrency = account.Сurrency,
-                                    Amount = account.Amount,
-                                    History = account.History
+                                    Amount = account.Amount
                                 };
                                 
-                                var newAccount = new Application.Scripts.Server.Account
+                                var newAccount = new Server.Account
                                 {
                                     Name = account.Name,
                                     Number = account.Number,
                                     Сurrency = account.Сurrency,
-                                    Amount = account.Amount -= moneyAmount,
-                                    History = account.History
+                                    Amount = account.Amount -= moneyAmount
                                 };
-                                
-                                newAccount.History.Add(new AccountHistory
-                                {
-                                    TransactionType = "W",
-                                    Amount = moneyAmount,
-                                    TargetAccountName = account.Name,
-                                    TargetAccountNumber = account.Number,
-                                    Date = DateTime.Today
-                                });
                                 
                                 UpdateUser(document.Reference, oldAccount, newAccount, onSuccess);
                             }
                             else if (account.Number.SequenceEqual(targetNumber))
                             {
-                                var oldAccount = new Application.Scripts.Server.Account
+                                var oldAccount = new Server.Account
                                 {
                                     Name = account.Name,
                                     Number = account.Number,
                                     Сurrency = account.Сurrency,
-                                    Amount = account.Amount,
-                                    History = account.History
+                                    Amount = account.Amount
                                 };
                                 
-                                var newAccount = new Application.Scripts.Server.Account
+                                var newAccount = new Server.Account
                                 {
                                     Name = account.Name,
                                     Number = account.Number,
                                     Сurrency = account.Сurrency,
-                                    Amount = account.Amount += moneyAmount,
-                                    History = account.History
+                                    Amount = account.Amount += moneyAmount
                                 };
-                                
-                                newAccount.History.Add(new AccountHistory
-                                {
-                                    TransactionType = "D",
-                                    Amount = moneyAmount,
-                                    TargetAccountName = account.Name,
-                                    TargetAccountNumber = account.Number,
-                                    Date = DateTime.Today
-                                });
                                 
                                 UpdateUser(document.Reference, oldAccount, newAccount, onSuccess);
                             }
@@ -234,16 +212,16 @@ namespace Application.Scripts.Client
             {
                 if(task.IsCompletedSuccessfully)
                 {
-                    Debug.Log("Профиль пользователя успешно сохранен!");
+                    Debug.Log("Profile saved!");
                 }
                 else
                 {
-                    Debug.LogError($"Ошибка сохранения профиля: {task.Exception}");
+                    Debug.LogError($"Failed to save profile: {task.Exception}");
                 } 
             });
         }
 
-        private void UpdateUser(DocumentReference docRef, Application.Scripts.Server.Account oldAccount, Application.Scripts.Server.Account newAccount, Action onSuccess)
+        private void UpdateUser(DocumentReference docRef, Server.Account oldAccount, Server.Account newAccount, Action onSuccess)
         {
             onSuccess += () => _accountsUpdated = 0;
             

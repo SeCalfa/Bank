@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Firebase.Firestore;
 using Random = UnityEngine.Random;
 
@@ -57,9 +56,6 @@ namespace Application.Scripts.Server
         public string Сurrency { get; set; }
         [FirestoreProperty]
         public float Amount { get; set; }
-        
-        [FirestoreProperty]
-        public List<AccountHistory> History { get; set; } = new();
     }
     
     [FirestoreData]
