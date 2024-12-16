@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "125598537050",
+    "firebase_url": "https://bank-e98cd-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "bank-e98cd",
+    "storage_bucket": "bank-e98cd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:125598537050:android:29a4b79c55cf3ece53cf63",
+        "android_client_info": {
+          "package_name": "com.DefaultCompany.Bank"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGXnvi25WHRWZXYzlgMN9yq8Au5cV0zzk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
