@@ -155,13 +155,14 @@ namespace Application.Scripts.Client
             _firstName = firstNameField.text;
             _secondName = secondNameField.text;
             
-            _authentication.SignUp(
-                _login,
-                _password,
-                _pin,
-                _pesel,
-                _firstName,
-                _secondName);
+            // _authentication.SignUp(
+            //     _login,
+            //     _password,
+            //     _pin,
+            //     _pesel,
+            //     _firstName,
+            //     _secondName);
+            StartCoroutine(_authentication.Register(_login, _password, _pin, _pesel, _firstName, _secondName));
         }
 
         public void SignIn()
@@ -169,9 +170,10 @@ namespace Application.Scripts.Client
             _login = loginInField.text;
             _password = passwordInField.text;
             
-            _authentication.SignIn(
-                _login,
-                _password);
+            // _authentication.SignIn(
+            //     _login,
+            //     _password);
+            StartCoroutine(_authentication.Login(_login, _password));
         }
 
         public void CreateBankAccount()

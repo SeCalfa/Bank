@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Application.Scripts.Server;
 using UnityEngine;
 using Firebase.Auth;
@@ -8,6 +10,8 @@ using Firebase.Extensions;
 using Firebase.Firestore;
 using UnityEngine.Events;
 using Random = UnityEngine.Random;
+using UnityEngine.Networking;
+using Newtonsoft.Json;
 
 namespace Application.Scripts.Client
 {
@@ -18,8 +22,10 @@ namespace Application.Scripts.Client
         [SerializeField] private UnityEvent onMoneySend;
         [SerializeField] private UnityEvent onBankAccountCreated;
         
+        private const string ApiBaseUrl = "https://localhost:7113/api/Auth";
+        
         private FirebaseAuth _auth;
-        private FirebaseUser _user;
+        private SuccessLogiData _user;
         private FirebaseFirestore _db;
         
         private int _accountsUpdated = 0;
@@ -38,8 +44,92 @@ namespace Application.Scripts.Client
 
         private void OnDestroy() {
             _auth.SignOut();
-            _auth.StateChanged -= AuthStateChanged;
+            // _auth.StateChanged -= AuthStateChanged;
             _auth = null;
+        }
+        
+        public IEnumerator Register(string email, string password, int pin, int pesel, string firstName, string secondName)
+        {
+            var requestBody = new
+            {
+                Email = email,
+                Password = password
+            };
+            string json = JsonConvert.SerializeObject(requestBody);
+
+            UnityWebRequest request = new UnityWebRequest($"{ApiBaseUrl}/register", "POST");
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+            
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                var responseText = request.downloadHandler.text;
+                Debug.Log($"Registration Success: {responseText}");
+
+                _user = JsonConvert.DeserializeObject<SuccessLogiData>(responseText);
+                
+                CreateProfile(_user.UserId, pin, pesel, firstName, secondName);
+                onSignedUp?.Invoke();
+            }
+            else
+            {
+                Debug.LogError($"Registration Failed: {request.error}");
+            }
+        }
+        
+        public IEnumerator Login(string email, string password)
+        {
+            var requestBody = new RegisterRequest
+            {
+                Email = email,
+                Password = password
+            };
+            string json = JsonConvert.SerializeObject(requestBody);
+
+            UnityWebRequest request = new UnityWebRequest($"{ApiBaseUrl}/login", "POST");
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+            
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                var responseText = request.downloadHandler.text;
+                Debug.Log($"Login Success: {responseText}");
+                
+                _user = JsonConvert.DeserializeObject<SuccessLogiData>(responseText);
+                
+                GetLoggedInUser(() => onSignedIn?.Invoke());
+            }
+            else
+            {
+                Debug.LogError($"Login Failed: {request.error}");
+            }
+        }
+
+        public IEnumerator AddData(object data)
+        {
+            var json = JsonUtility.ToJson(data);
+            var request = new UnityWebRequest($"{ApiBaseUrl}/firestore/add", "POST");
+            byte[] body = System.Text.Encoding.UTF8.GetBytes(json);
+            request.uploadHandler = new UploadHandlerRaw(body);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+                Debug.Log($"Response: {request.downloadHandler.text}");
+            else
+                Debug.LogError($"Error: {request.error}");
         }
 
         public void SignUp(string email, string password, int pin, int pesel, string firstName, string secondName)
@@ -164,35 +254,35 @@ namespace Application.Scripts.Client
         {
             _auth = FirebaseAuth.DefaultInstance;
             _db = FirebaseFirestore.DefaultInstance;
-            _auth.StateChanged += AuthStateChanged;
-            
-            AuthStateChanged(this, null);
+            // _auth.StateChanged += AuthStateChanged;
+            //
+            // AuthStateChanged(this, null);
         }
 
         // On state changed
-        private void AuthStateChanged(object sender, EventArgs eventArgs)
-        {
-            if (_auth.CurrentUser == _user)
-            {
-                return;
-            }
-            
-            var signedIn = _user != _auth.CurrentUser && _auth.CurrentUser != null && _auth.CurrentUser.IsValid();
-            
-            // Signed out
-            if (!signedIn && _user != null) {
-                Debug.Log("Signed out " + _user.UserId);
-            }
-            
-            _user = _auth.CurrentUser;
-            
-            // Signed in
-            if (signedIn) {
-                Debug.Log("Signed in " + _user.UserId);
-
-                GetLoggedInUser(() => onSignedIn?.Invoke());
-            }
-        }
+        // private void AuthStateChanged(object sender, EventArgs eventArgs)
+        // {
+        //     if (_auth.CurrentUser == _user)
+        //     {
+        //         return;
+        //     }
+        //     
+        //     var signedIn = _user != _auth.CurrentUser && _auth.CurrentUser != null && _auth.CurrentUser.IsValid();
+        //     
+        //     // Signed out
+        //     if (!signedIn && _user != null) {
+        //         Debug.Log("Signed out " + _user.UserId);
+        //     }
+        //     
+        //     _user = _auth.CurrentUser;
+        //     
+        //     // Signed in
+        //     if (signedIn) {
+        //         Debug.Log("Signed in " + _user.UserId);
+        //
+        //         GetLoggedInUser(() => onSignedIn?.Invoke());
+        //     }
+        // }
 
         private void CreateProfile(string id, int pin, int pesel, string firstName, string secondName)
         {
@@ -258,6 +348,10 @@ namespace Application.Scripts.Client
 
         private void GetLoggedInUser(Action onSuccess)
         {
+            print(_db);
+            print(_user);
+            print(_user.UserId);
+            print(_user.Email);
             var query = _db.Collection("Users").WhereEqualTo("Id", _user.UserId);
 
             query.GetSnapshotAsync().ContinueWithOnMainThread(task =>
@@ -276,5 +370,19 @@ namespace Application.Scripts.Client
                 onSuccess?.Invoke();
             });
         }
+    }
+    
+    [Serializable]
+    public class RegisterRequest
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+    
+    [Serializable]
+    public class SuccessLogiData
+    {
+        public string UserId { get; set; }
+        public string Email { get; set; }
     }
 }
